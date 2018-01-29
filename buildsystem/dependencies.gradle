@@ -1,0 +1,203 @@
+allprojects {
+    repositories {
+        jcenter()
+        mavenCentral()
+    }
+}
+
+ext {
+    //Android
+    androidBuildToolsVersion = "26.0.2"
+    androidMinSdkVersion = 21
+    androidTargetSdkVersion = 27
+    androidCompileSdkVersion = 27
+
+    // Java version
+    javaVersion = JavaVersion.VERSION_1_8
+
+    // Support library version
+    supportLibraryVersion = '27.0.2'
+
+    // Play service version
+    playServiceVersion = "11.2.0"
+
+    // Dagger 2
+    daggerVersion = '2.9'
+
+    butterKnifeVersion = '8.6.0'
+
+    // Rx android 2
+    rxAndroid2Version = '2.0.1'
+    rxJava2Version = '2.1.8'
+
+    // Rx android 1
+    rxAndroid1Version = '1.0.1'
+    rxJava1Version = '1.1.5'
+
+    // Annotation processor
+    javaxAnnotationVersion = '1.0'
+
+    androidAnnotationsVersion = '23.1.1'
+
+    gsonVersion = '2.7'
+
+    okHttpVersion = '3.8.1'
+    retrofitVersion = '2.3.0'
+    retrofitRxjavaVersion = '2.3.0'
+
+    materialDialogVersion = '0.9.4.5'
+    timberVersion = '4.5.1'
+    caligraphyVersion = '2.2.0'
+    parcelerVersion = '1.1.5'
+    immutablesVersion = "2.4.3"
+
+    //Testing
+    jUnitVersion = '4.12'
+    assertJVersion = '1.7.1'
+    mockitoVersion = '1.10.19'
+    dexmakerVersion = '1.4'
+    robolectricVersion = '3.0'
+    testingSupportLibVersion = '0.1'
+    testRunnerVersion = '0.4'
+    hamcrestVersion = '1.1'
+
+    glideVersion = '4.0.0'
+
+    imageLoaders = [
+            glide        : "com.github.bumptech.glide:glide:${glideVersion}",
+            glideCompiler: "com.github.bumptech.glide:compiler:${glideVersion}"
+    ]
+
+    uiComponent = [
+            bottomNavEx      : "com.github.ittianyu:BottomNavigationViewEx:1.2.0",
+            avLoading        : "com.wang.avi:library:2.1.3",
+            photoViewer      : "com.github.chrisbanes.photoview:library:1.2.4",
+            pageIndicator    : "com.romandanylyk:pageindicatorview:0.2.0@aar",
+            smoothProgressBar: "com.github.castorflex.smoothprogressbar:library:1.1.0",
+            circleIndicator  : "me.relex:circleindicator:1.2.1@aar",
+            materialDialog   : "com.afollestad.material-dialogs:core:${materialDialogVersion}"
+    ]
+
+    ioComponent = [
+            retrofitComponents: [ // Groovy list literal
+                                  "com.squareup.retrofit2:retrofit:${retrofitVersion}",
+                                  "com.squareup.retrofit2:converter-gson:${retrofitVersion}",
+                                  "com.squareup.retrofit2:adapter-rxjava2:${retrofitRxjavaVersion}",
+                                  "com.squareup.okhttp3:okhttp:${okHttpVersion}",
+                                  "com.squareup.okhttp3:logging-interceptor:${okHttpVersion}",
+            ],
+
+            rxJava2     : [
+                    "io.reactivex.rxjava2:rxandroid:${rxAndroid2Version}",
+                    "io.reactivex.rxjava2:rxjava:${rxJava2Version}",
+            ],
+
+            // Remember provided javaxAnnotation
+            rxJava1   : [
+                    "io.reactivex:rxjava:${rxJava1Version}",
+                    "io.reactivex:rxandroid:${rxAndroid1Version}",
+            ]
+    ]
+
+    utilDependency = [
+            dexter             : "com.karumi:dexter:4.1.0",  // Request permission helper dexter
+            apacheCommonLang   : "org.apache.commons:commons-lang3:3.4",
+            proguardSnippets   : "com.infstory:proguard-snippets:1.0.0", // Proguard rule
+
+            caligraphy         : "uk.co.chrisjenx:calligraphy:${caligraphyVersion}",
+
+            javaxAnnotation    : "javax.annotation:jsr250-api:${javaxAnnotationVersion}",
+
+            gson               : "com.google.code.gson:gson:${gsonVersion}",
+
+            parceler           : "org.parceler:parceler-api:${parcelerVersion}",
+            parcelerCompiler   : "org.parceler:parceler:${parcelerVersion}",
+
+            // dagger 2
+            daggerCompiler     : "com.google.dagger:dagger-compiler:${daggerVersion}",
+            dagger             : "com.google.dagger:dagger:${daggerVersion}",
+
+            butterKnife        : "com.jakewharton:butterknife:${butterKnifeVersion}",
+            butterKnifeCompiler: "com.jakewharton:butterknife-compiler:${butterKnifeVersion}",
+
+            timber             : "com.jakewharton.timber:timber:${timberVersion}",
+
+            crashlytics        : "com.crashlytics.sdk.android:crashlytics:2.5.7@aar",
+
+            stickyHeaderSLiM   : "com.tonicartos:superslim:0.4.13",
+            iosswitch          : "com.7heaven.ioswidget:iosswitch:0.6",
+
+            slf4jApi           : "org.slf4j:slf4j-api:1.7.22",
+            slf4jSimple        : "org.slf4j:slf4j-simple:1.7.22",
+
+            immutables         : "org.immutables:value:${immutablesVersion}",
+            immutablesBuilder  : "org.immutables:builder:${immutablesVersion}",
+
+            guava              : "com.google.guava:guava:22.0-android"
+    ]
+
+    playServiceDepedency = [
+            map                : "com.google.android.gms:play-services-maps:${playServiceVersion}",
+            locationApi        : "com.google.android.gms:play-services-location:${playServiceVersion}",
+            visionPlayService  : "com.google.android.gms:play-services-vision:${playServiceVersion}",
+            analyticPlayService: "com.google.android.gms:play-services-analytics:${playServiceVersion}",
+            playServicesAuth   : "com.google.android.gms:play-services-auth:${playServiceVersion}",
+    ]
+
+    supportLib = [
+            compat                : "com.android.support:support-compat:${supportLibraryVersion}",
+            coreUtils             : "com.android.support:support-core-utils:${supportLibraryVersion}",
+            coreUi                : "com.android.support:support-core-ui:${supportLibraryVersion}",
+            mediaCompat           : "com.android.support:support-media-compat:${supportLibraryVersion}",
+            supportFragment       : "com.android.support:support-fragment:${supportLibraryVersion}",
+            gridLayout            : "com.android.support:gridlayout-v7:${supportLibraryVersion}",
+            mediaRouter           : "com.android.support:mediarouter-v7${supportLibraryVersion}",
+            paletteV7             : "com.android.support:palette-v7:${supportLibraryVersion}",
+            preferenceV7          : "com.android.support:preference-v7:${supportLibraryVersion}",
+            cardViewV7            : "com.android.support:cardview-v7:${supportLibraryVersion}",
+            appcompatV7           : "com.android.support:appcompat-v7:${supportLibraryVersion}",
+            supportV13            : "com.android.support:support-v13:${supportLibraryVersion}",
+            preferenceV14         : "com.android.support:preference-v14:${supportLibraryVersion}",
+            preferenceLeanbackV17 : "com.android.support:preference-leanback-v17:${supportLibraryVersion}",
+            leanbackV17           : "com.android.support:leanback-v17:${supportLibraryVersion}",
+            vectorDrawable        : "com.android.support:support-vector-drawable:${supportLibraryVersion}",
+            annotations           : "com.android.support:support-annotations:${supportLibraryVersion}",
+            animatedVectorDrawable: "com.android.support:animated-vector-drawable:${supportLibraryVersion}",
+            exifinterface         : "com.android.support:exifinterface:${supportLibraryVersion}",
+            recommendation        : "com.android.support:recommendation:${supportLibraryVersion}",
+            wear                  : "com.android.support:wear:${supportLibraryVersion}",
+            design                : "com.android.support:design:${supportLibraryVersion}",
+            recyclerViewV7        : "com.android.support:recyclerview-v7:${supportLibraryVersion}",
+            percent               : "com.android.support:percent:${supportLibraryVersion}",
+            constraintLayout      : "com.android.support.constraint:constraint-layout:1.0.2"
+    ]
+
+    firebaseGoogle = [
+            firebaseAuth    : "com.google.firebase:firebase-auth:${playServiceVersion}",
+            firebaseDatabase: "com.google.firebase:firebase-database:${playServiceVersion}"
+    ]
+
+    fireBaseLibs = [
+            firebaseUiDatabse: "com.firebaseui:firebase-ui-database:2.3.0"
+            // Add more firebase ui libs here
+    ]
+
+    testDependency = [
+            supportTestEspreso  : "com.android.support.test.espresso:espresso-core:3.0.1",
+            supportTestRunner  : "com.android.support.test:runner:1.0.1",
+            junit              : "junit:junit:${jUnitVersion}",
+            mockito            : "org.mockito:mockito-core:${mockitoVersion}",
+            powermockJunit     : "org.powermock:powermock-module-junit4:1.6.5",
+            powermockMockito   : "org.powermock:powermock-api-mockito:1.6.6",
+            assertj            : "org.assertj:assertj-core:${assertJVersion}",
+            robolectric        : "org.robolectric:robolectric:${robolectricVersion}",
+
+            testingSupportLib  : "com.android.support.test:testing-support-lib:${testingSupportLibVersion}",
+            dexmaker           : "com.google.dexmaker:dexmaker:${dexmakerVersion}",
+            dexmakerMockito    : "com.google.dexmaker:dexmaker-mockito:${dexmakerVersion}",
+
+            hamcrestCore       : "org.hamcrest:hamcrest-core:${hamcrestVersion}",
+            hamcrestLibrary    : "org.hamcrest:hamcrest-library:${hamcrestVersion}",
+            hamcrestIntegration: "org.hamcrest:hamcrest-integration:${hamcrestVersion}",
+    ]
+}

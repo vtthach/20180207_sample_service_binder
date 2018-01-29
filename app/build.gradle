@@ -1,0 +1,36 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion androidCompileSdkVersion
+    buildToolsVersion androidBuildToolsVersion
+
+    defaultConfig {
+        applicationId "cbsa.sample"
+        minSdkVersion androidMinSdkVersion
+        targetSdkVersion androidTargetSdkVersion
+        versionCode 1
+        versionName "1.0"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        targetCompatibility javaVersion
+        sourceCompatibility javaVersion
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation supportLib.appcompatV7
+    implementation utilDependency.timber
+    implementation 'com.android.support.constraint:constraint-layout:1.0.2'
+    implementation project(':library')
+    implementation ioComponent.rxJava2
+    compileOnly utilDependency.javaxAnnotation
+    testImplementation testDependency.junit
+}
