@@ -42,35 +42,6 @@ public class SocketClientImpl implements SocketClient {
         this.closeState(state);
     }
 
-    public String scan(String ipAddress, int port, int connectionTimeout, byte[] sendBuffer) throws IOException {
-        this.socketStatusListener.onStatusChange(SocketClientStatus.Connecting);
-        State state = State.create(sendBuffer, 1024);
-
-        try {
-            state.connect(ipAddress, port, connectionTimeout);
-            if (!state.isConnected()) {
-                this.socketStatusListener.onError("Socket not connected!");
-                this.closeState(state);
-                return ;
-            }
-
-            this.socketStatusListener.onStatusChange(SocketClientStatus.Sending);
-            int bytesSent = state.send();
-            if (bytesSent < 1) {
-                this.socketStatusListener.onError("Nothing sent!");
-                this.closeState(state);
-                return;
-            }
-        } catch (IOException var7) {
-            this.socketStatusListener.onError(var7.getMessage());
-            this.closeState(state);
-            return;
-        }
-
-        this.handleReceiveBytes(state);
-        this.closeState(state);
-    }
-
     private void handleReceiveBytes(State state) throws IOException {
         this.socketStatusListener.onStatusChange(SocketClientStatus.Receiving);
 
