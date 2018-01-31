@@ -2,6 +2,8 @@ package cbsa.sample;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
 import cbsa.device.barcode.ResultCallback;
@@ -15,12 +17,34 @@ public class SampleBarcodeActivity extends AppCompatActivity implements ServiceB
     ServiceBinder<DeviceService> serviceBinder;
 
     TextView textView;
+    TextView scanStatus;
+    private DeviceService service;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         textView = findViewById(R.id.isConnect);
+        scanStatus = findViewById(R.id.scanStatus);
+        Button btnScan = findViewById(R.id.btnScan);
+        btnScan.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (service != null) {
+                    service.getBarCodeService().scan(new ResultCallback<String>() {
+                        @Override
+                        public void onSuccess(String result) {
+                            scanStatus.setText(System.currentTimeMillis() + " " + result);
+                        }
+
+                        @Override
+                        public void onError(String reason) {
+                            scanStatus.setText(reason);
+                        }
+                    });
+                }
+            }
+        });
 
         serviceBinder = new ServiceBinder<>(this,
                 DeviceServiceNative.class,
@@ -44,6 +68,7 @@ public class SampleBarcodeActivity extends AppCompatActivity implements ServiceB
     @Override
     public void onServiceConnected(DeviceService service) {
         Timber.i("vtt onServiceConnected: ");
+        this.service = service;
 
         service.getBarCodeService().isConnected(new ResultCallback<Boolean>() {
             @Override

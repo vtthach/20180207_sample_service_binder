@@ -5,11 +5,11 @@ import java.io.IOException;
 
 import javax.inject.Inject;
 
-import cbsa.cardscanner.CardScannerService;
-import cbsa.cardscanner.SocketClient;
-import cbsa.cardscanner.SocketClientStatus;
-import cbsa.cardscanner.SocketStatusListener;
 import cbsa.device.barcode.ResultCallback;
+import cbsa.device.barcode.sdk.CardScannerService;
+import cbsa.device.barcode.sdk.SocketClient;
+import cbsa.device.barcode.sdk.SocketClientStatus;
+import cbsa.device.barcode.sdk.SocketStatusListener;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
@@ -125,7 +125,7 @@ public class BarcodeServiceImpl implements BarcodeService {
     }
 
     private String getScanResult() throws IOException {
-//        cardScannerService.scan();
+        cardScannerService.scan();
         return "TODO need update library";
     }
 }

@@ -3,10 +3,10 @@ package cbsa.device.injection;
 
 import javax.inject.Singleton;
 
-import cbsa.cardscanner.CardScannerService;
-import cbsa.cardscanner.CardScannerServiceImpl;
-import cbsa.cardscanner.SocketClient;
-import cbsa.cardscanner.SocketClientImpl;
+import cbsa.device.barcode.sdk.CardScannerService;
+import cbsa.device.barcode.sdk.CardScannerServiceImpl;
+import cbsa.device.barcode.sdk.SocketClient;
+import cbsa.device.barcode.sdk.SocketClientImpl;
 import cbsa.device.barcode.service.BarcodeService;
 import cbsa.device.barcode.service.BarcodeServiceImpl;
 import dagger.Module;
