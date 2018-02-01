@@ -2,6 +2,7 @@ package cbsa.device.barcode.service;
 
 
 import java.io.IOException;
+import java.util.List;
 
 import javax.inject.Inject;
 
@@ -10,6 +11,9 @@ import cbsa.device.barcode.sdk.CardScannerService;
 import cbsa.device.barcode.sdk.SocketClient;
 import cbsa.device.barcode.sdk.SocketClientStatus;
 import cbsa.device.barcode.sdk.SocketStatusListener;
+import cbsa.device.barcode.sdk.v2.device.DeviceDetector;
+import cbsa.device.barcode.sdk.v2.device.DeviceDetectorImpl;
+import cbsa.device.barcode.sdk.v2.device.BarcodeScanner;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
@@ -21,7 +25,7 @@ import static cbsa.device.Constant.LOG_TAG;
 
 public class BarcodeServiceImpl implements BarcodeService {
 
-    private final SocketClient socketClient;
+    private DisposableObserver<String> scanDisposal;
     private final CardScannerService cardScannerService;
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
     private final SocketStatusListener socketStatusListener = new SocketStatusListener() {
@@ -42,11 +46,10 @@ public class BarcodeServiceImpl implements BarcodeService {
     };
 
     @Inject
-    public BarcodeServiceImpl(SocketClient socketClient,
-                              CardScannerService cardScannerService) {
-        this.socketClient = socketClient;
+    public BarcodeServiceImpl(CardScannerService cardScannerService) {
         this.cardScannerService = cardScannerService;
         this.cardScannerService.setSocketStatusListener(socketStatusListener);
+        this.deviceDetector = new DeviceDetectorImpl();
     }
 
     @Override
@@ -93,15 +96,22 @@ public class BarcodeServiceImpl implements BarcodeService {
 
     @Override
     public void scan(ResultCallback<String> resultCallback) {
-        DisposableObserver<String> disposal = getScanResultDisposal(resultCallback);
+        disposePreviousRequest();
+        scanDisposal = getScanResultDisposal(resultCallback);
         getScanResultObservable()
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(disposal);
-        compositeDisposable.add(disposal);
+                .subscribe(scanDisposal);
+        compositeDisposable.add(scanDisposal);
     }
 
-    private DisposableObserver<String> getScanResultDisposal(ResultCallback<String> resultCallback) {
+    private void disposePreviousRequest() {
+        if (scanDisposal != null) {
+            scanDisposal.dispose();
+        }
+    }
+
+    private DisposableObserver<String> getScanResultDisposal(final ResultCallback<String> resultCallback) {
         return new DisposableObserver<String>() {
             @Override
             public void onNext(String result) {
@@ -125,7 +135,33 @@ public class BarcodeServiceImpl implements BarcodeService {
     }
 
     private String getScanResult() throws IOException {
-        cardScannerService.scan();
-        return "TODO need update library";
+        return cardScannerService.scan();
+    }
+
+
+    DeviceDetector deviceDetector;
+
+    @Override
+    public void searchDevices() {
+        deviceDetector.searchDevices(null).subscribe(getDisposalSearchDevices());
+    }
+
+    private DisposableObserver<List<BarcodeScanner>> getDisposalSearchDevices() {
+        return new DisposableObserver<List<BarcodeScanner>>() {
+            @Override
+            public void onNext(List<BarcodeScanner> listDevice) {
+                Timber.i("Search Barcode Devices Result - : " + listDevice.size());
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                Timber.e("Devices: " + e.getMessage());
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        };
     }
 }

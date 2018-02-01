@@ -3,6 +3,10 @@ package cbsa.device.barcode.sdk;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
+import cbsa.device.barcode.exception.BarCodeOutputDataException;
+import cbsa.device.barcode.exception.BarcodeDeviceNotConnectException;
+import cbsa.device.barcode.exception.BarCodeInputDataException;
+
 public class SocketClientImpl implements SocketClient {
     private SocketStatusListener socketStatusListener;
 
@@ -13,7 +17,7 @@ public class SocketClientImpl implements SocketClient {
         this.socketStatusListener = socketStatusListener;
     }
 
-    public void send(String ipAddress, int port, int connectionTimeout, byte[] sendBuffer) throws IOException {
+    public String send(String ipAddress, int port, int connectionTimeout, byte[] sendBuffer) throws IOException, BarcodeDeviceNotConnectException {
         this.socketStatusListener.onStatusChange(SocketClientStatus.Connecting);
         State state = State.create(sendBuffer, 1024);
 
@@ -22,7 +26,7 @@ public class SocketClientImpl implements SocketClient {
             if (!state.isConnected()) {
                 this.socketStatusListener.onError("Socket not connected!");
                 this.closeState(state);
-                return;
+                throw new BarcodeDeviceNotConnectException();
             }
 
             this.socketStatusListener.onStatusChange(SocketClientStatus.Sending);
@@ -30,45 +34,46 @@ public class SocketClientImpl implements SocketClient {
             if (bytesSent < 1) {
                 this.socketStatusListener.onError("Nothing sent!");
                 this.closeState(state);
-                return;
+                throw new BarCodeInputDataException();
             }
         } catch (IOException var7) {
             this.socketStatusListener.onError(var7.getMessage());
             this.closeState(state);
-            return;
+            throw var7;
         }
-
-        this.handleReceiveBytes(state);
-        this.closeState(state);
+        String barcode = handleReceiveBytes(state);
+        closeState(state);
+        return barcode;
     }
 
-    private void handleReceiveBytes(State state) throws IOException {
+    private String handleReceiveBytes(State state) throws IOException {
         this.socketStatusListener.onStatusChange(SocketClientStatus.Receiving);
-
         int receivedBytes;
         try {
             receivedBytes = state.receive();
-        } catch (IOException var4) {
-            this.socketStatusListener.onError(var4.getMessage());
+            if (receivedBytes > 0) {
+                return this.assertReceiveBuffer(state.getReceiveBuffer());
+            } else {
+                throw new BarCodeOutputDataException();
+            }
+        } catch (IOException ioe) {
+            this.socketStatusListener.onError(ioe.getMessage());
             this.closeState(state);
-            return;
+            throw ioe;
         }
-
-        if (receivedBytes > 0) {
-            this.assertReceiveBuffer(state.getReceiveBuffer());
-        }
-
     }
 
-    private void assertReceiveBuffer(byte[] buffer) throws UnsupportedEncodingException {
+    private String assertReceiveBuffer(byte[] buffer) throws UnsupportedEncodingException {
+        String rs = null;
         if (buffer != null) {
             String barcodeString = new String(buffer, "UTF-8");
             if (!barcodeString.equals("")) {
                 String[] stringsResult = barcodeString.split("\r");
-                String barcode = stringsResult.length > 0 ? stringsResult[0] : null;
-                this.socketStatusListener.onReceive(barcode);
+                rs = stringsResult.length > 0 ? stringsResult[0] : null;
+                this.socketStatusListener.onReceive(rs);
             }
         }
+        return rs;
     }
 
     private void closeState(State state) {

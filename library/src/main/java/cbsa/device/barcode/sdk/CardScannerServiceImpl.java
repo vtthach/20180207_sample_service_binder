@@ -3,6 +3,9 @@ package cbsa.device.barcode.sdk;
 
 import java.io.IOException;
 
+/**
+ * Decompile from jar
+ */
 public class CardScannerServiceImpl implements CardScannerService {
     private final SocketClient socketClient;
     private final String ipAddress;
@@ -20,9 +23,9 @@ public class CardScannerServiceImpl implements CardScannerService {
         this.socketClient.setSocketStatusListener(new SocketListener(socketStatusListener));
     }
 
-    public void scan() throws IOException {
+    public String scan() throws IOException {
         final byte[] etxStx = {3, 2};
-        this.socketClient.send(this.ipAddress, this.port, this.connectionTimeout, etxStx);
+        return this.socketClient.send(this.ipAddress, this.port, this.connectionTimeout, etxStx);
     }
 
     public boolean isOnline() {

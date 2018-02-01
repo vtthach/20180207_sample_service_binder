@@ -6,7 +6,11 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import java.net.SocketException;
+
+import cbsa.device.Utils;
 import cbsa.device.barcode.ResultCallback;
+import cbsa.device.barcode.service.BarcodeService;
 import cbsa.device.service.DeviceService;
 import cbsa.device.service.DeviceServiceNative;
 import cbsa.device.service.ServiceBinder;
@@ -18,7 +22,7 @@ public class SampleBarcodeActivity extends AppCompatActivity implements ServiceB
 
     TextView textView;
     TextView scanStatus;
-    private DeviceService service;
+    private BarcodeService service;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,22 +31,21 @@ public class SampleBarcodeActivity extends AppCompatActivity implements ServiceB
         textView = findViewById(R.id.isConnect);
         scanStatus = findViewById(R.id.scanStatus);
         Button btnScan = findViewById(R.id.btnScan);
-        btnScan.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (service != null) {
-                    service.getBarCodeService().scan(new ResultCallback<String>() {
-                        @Override
-                        public void onSuccess(String result) {
-                            scanStatus.setText(System.currentTimeMillis() + " " + result);
-                        }
+        btnScan.setOnClickListener(view -> {
+            if (service != null) {
+                scanStatus.setText("Scan...");
+                service.scan(new ResultCallback<String>() {
+                    @Override
+                    public void onSuccess(String result) {
+                        scanStatus.setText(String.format("%s (Time: %s)", result, System.currentTimeMillis()));
+                    }
 
-                        @Override
-                        public void onError(String reason) {
-                            scanStatus.setText(reason);
-                        }
-                    });
-                }
+                    @Override
+                    public void onError(String reason) {
+                        scanStatus.setText(reason);
+                    }
+                });
+
             }
         });
 
@@ -68,7 +71,7 @@ public class SampleBarcodeActivity extends AppCompatActivity implements ServiceB
     @Override
     public void onServiceConnected(DeviceService service) {
         Timber.i("vtt onServiceConnected: ");
-        this.service = service;
+        this.service = service.getBarCodeService();
 
         service.getBarCodeService().isConnected(new ResultCallback<Boolean>() {
             @Override
