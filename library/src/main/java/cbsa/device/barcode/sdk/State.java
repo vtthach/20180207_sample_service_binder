@@ -10,6 +10,8 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 
+import timber.log.Timber;
+
 public class State implements Closeable {
     private Socket socket;
     private byte[] sendBuffer;
@@ -40,6 +42,7 @@ public class State implements Closeable {
     }
 
     public int send() throws IOException {
+        Timber.i("send");
         this.disposeDataOutputStream();
         this.dataOutputStream = new DataOutputStream(this.socket.getOutputStream());
         this.dataOutputStream.write(this.sendBuffer, 0, this.sendBuffer.length);
@@ -47,6 +50,7 @@ public class State implements Closeable {
     }
 
     public int receive() throws IOException {
+        Timber.i("receive");
         InputStream inputStream = this.socket.getInputStream();
         byte[] data = new byte[1024];
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
@@ -72,6 +76,7 @@ public class State implements Closeable {
 
     void disposeDataOutputStream() throws IOException {
         if (this.dataOutputStream != null) {
+            Timber.i("disposeDataOutputStream");
             this.dataOutputStream.flush();
             this.dataOutputStream.close();
             this.dataOutputStream = null;
@@ -80,18 +85,19 @@ public class State implements Closeable {
 
     void disposeSocket() throws IOException {
         if (this.socket != null) {
+            Timber.i("disposeSocket");
             try {
                 if (this.socket.isConnected()) {
                     this.socket.shutdownInput();
                 }
             } catch (IOException var3) {
+                Timber.e(var3, "Error when shutdownInput");
             }
-
             try {
                 this.socket.shutdownOutput();
             } catch (IOException var2) {
+                Timber.e(var2, "Error when shutdownOutput");
             }
-
             this.socket.close();
             this.socket = null;
         }

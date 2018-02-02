@@ -3,9 +3,10 @@ package cbsa.device.barcode.sdk;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
-import cbsa.device.barcode.exception.BarCodeOutputDataException;
-import cbsa.device.barcode.exception.BarcodeDeviceNotConnectException;
+import cbsa.device.barcode.exception.BarCodeOutputDataError;
+import cbsa.device.barcode.exception.BarcodeDeviceNotConnectError;
 import cbsa.device.barcode.exception.BarCodeInputDataException;
+import timber.log.Timber;
 
 public class SocketClientImpl implements SocketClient {
     private SocketStatusListener socketStatusListener;
@@ -17,7 +18,7 @@ public class SocketClientImpl implements SocketClient {
         this.socketStatusListener = socketStatusListener;
     }
 
-    public String send(String ipAddress, int port, int connectionTimeout, byte[] sendBuffer) throws IOException, BarcodeDeviceNotConnectException {
+    public String send(String ipAddress, int port, int connectionTimeout, byte[] sendBuffer) throws IOException, BarcodeDeviceNotConnectError {
         this.socketStatusListener.onStatusChange(SocketClientStatus.Connecting);
         State state = State.create(sendBuffer, 1024);
 
@@ -26,7 +27,7 @@ public class SocketClientImpl implements SocketClient {
             if (!state.isConnected()) {
                 this.socketStatusListener.onError("Socket not connected!");
                 this.closeState(state);
-                throw new BarcodeDeviceNotConnectException();
+                throw new BarcodeDeviceNotConnectError();
             }
 
             this.socketStatusListener.onStatusChange(SocketClientStatus.Sending);
@@ -37,10 +38,12 @@ public class SocketClientImpl implements SocketClient {
                 throw new BarCodeInputDataException();
             }
         } catch (IOException var7) {
+            Timber.e(var7, "vtt - interrupted exception");
             this.socketStatusListener.onError(var7.getMessage());
             this.closeState(state);
             throw var7;
         }
+        Timber.i("vtt - End sent");
         String barcode = handleReceiveBytes(state);
         closeState(state);
         return barcode;
@@ -54,7 +57,7 @@ public class SocketClientImpl implements SocketClient {
             if (receivedBytes > 0) {
                 return this.assertReceiveBuffer(state.getReceiveBuffer());
             } else {
-                throw new BarCodeOutputDataException();
+                throw new BarCodeOutputDataError();
             }
         } catch (IOException ioe) {
             this.socketStatusListener.onError(ioe.getMessage());
@@ -79,10 +82,10 @@ public class SocketClientImpl implements SocketClient {
     private void closeState(State state) {
         try {
             state.close();
-        } catch (IOException var3) {
-            this.socketStatusListener.onError(var3.getMessage());
+        } catch (IOException e) {
+            Timber.e(e, "close State error");
+            this.socketStatusListener.onError(e.getMessage());
         }
-
     }
 
     public boolean isOnline(String ipAddress, int port, int connectionTimeout) {

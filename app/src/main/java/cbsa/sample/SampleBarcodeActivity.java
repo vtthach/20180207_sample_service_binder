@@ -76,7 +76,7 @@ public class SampleBarcodeActivity extends AppCompatActivity implements ServiceB
         service.getBarCodeService().isConnected(new ResultCallback<Boolean>() {
             @Override
             public void onSuccess(Boolean result) {
-                textView.setText("Is connected : " + result);
+                textView.setText("Connected");
             }
 
             @Override

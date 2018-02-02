@@ -4,10 +4,9 @@ package cbsa.device.barcode.exception;
 /**
  * Exception occur when forget to init socket connection via socket.connect(...) method
  */
-public class BarcodeDeviceNotConnectException extends RuntimeException {
-    // Use later
+public class BarcodeDeviceNotConnectError extends Throwable {
 
-    public BarcodeDeviceNotConnectException() {
+    public BarcodeDeviceNotConnectError() {
         super("Device not connect");
     }
 }

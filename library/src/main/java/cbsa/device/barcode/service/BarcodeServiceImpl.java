@@ -8,7 +8,6 @@ import javax.inject.Inject;
 
 import cbsa.device.barcode.ResultCallback;
 import cbsa.device.barcode.sdk.CardScannerService;
-import cbsa.device.barcode.sdk.SocketClient;
 import cbsa.device.barcode.sdk.SocketClientStatus;
 import cbsa.device.barcode.sdk.SocketStatusListener;
 import cbsa.device.barcode.sdk.v2.device.DeviceDetector;
@@ -26,7 +25,7 @@ import static cbsa.device.Constant.LOG_TAG;
 public class BarcodeServiceImpl implements BarcodeService {
 
     private DisposableObserver<String> scanDisposal;
-    private final CardScannerService cardScannerService;
+    private final CardScannerService  cardScannerService;
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
     private final SocketStatusListener socketStatusListener = new SocketStatusListener() {
         @Override

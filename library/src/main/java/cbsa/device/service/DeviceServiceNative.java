@@ -57,6 +57,7 @@ public class DeviceServiceNative extends BaseStickyService<DeviceService> implem
     protected void onStartCheckIntent(Intent intent) {
         super.onStartCheckIntent(intent);
         Timber.i("onStartCheckIntent: %s", intent.toString());
+
     }
 
     @Override
