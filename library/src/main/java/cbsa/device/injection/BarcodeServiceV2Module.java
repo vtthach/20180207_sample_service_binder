@@ -12,20 +12,19 @@ import cbsa.device.barcode.sdk.v2.BarcodeScannerWrapperImpl;
 import cbsa.device.barcode.sdk.v2.CardScannerServiceV2;
 import cbsa.device.barcode.sdk.v2.CardScannerServiceV2Impl;
 import cbsa.device.barcode.service.BarcodeService;
-import cbsa.device.barcode.service.BarcodeServiceImpl;
 import cbsa.device.barcode.service.BarcodeServiceV2Impl;
 import dagger.Module;
 import dagger.Provides;
 
 @Module
 @Singleton
-public class BarcodeServiceModule {
+public class BarcodeServiceV2Module {
 
     private String ipAddress;
     private int port;
     private int connectionTimeout;
 
-    public BarcodeServiceModule(String ipAddress, int port, int connectionTimeout) {
+    public BarcodeServiceV2Module(String ipAddress, int port, int connectionTimeout) {
         this.ipAddress = ipAddress;
         this.port = port;
         this.connectionTimeout = connectionTimeout;
@@ -33,19 +32,19 @@ public class BarcodeServiceModule {
 
     @Provides
     @Singleton
-    BarcodeService provideBarCodeService(BarcodeServiceImpl barcodeService) {
+    BarcodeService provideBarCodeServiceV2(BarcodeServiceV2Impl barcodeService) {
         return barcodeService;
     }
 
     @Provides
     @Singleton
-    SocketClient provideSocketClient() {
-        return new SocketClientImpl();
+    CardScannerServiceV2 provideCardScannerServiceV2(BarcodeScannerWrapper scanWrapper) {
+        return new CardScannerServiceV2Impl(scanWrapper, ipAddress, port, connectionTimeout);
     }
 
     @Provides
     @Singleton
-    CardScannerService provideCardScannerService(SocketClient socketClient) {
-        return new CardScannerServiceImpl(socketClient, ipAddress, port, connectionTimeout);
+    BarcodeScannerWrapper provideBarcodeScannerWrapper() {
+        return new BarcodeScannerWrapperImpl(ipAddress, port, connectionTimeout);
     }
 }

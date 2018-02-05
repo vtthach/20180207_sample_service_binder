@@ -8,7 +8,7 @@ import dagger.Component;
 
 @Singleton
 @Component(modules = {DeviceServiceModule.class,
-        BarcodeServiceModule.class})
+        BarcodeServiceV2Module.class})
 public interface DeviceServiceComponent {
     void inject(DeviceServiceNative serviceNative);
 }

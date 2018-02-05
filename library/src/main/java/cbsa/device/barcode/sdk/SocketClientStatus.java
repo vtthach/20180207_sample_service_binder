@@ -5,9 +5,10 @@ public enum SocketClientStatus {
     Connecting,
     Sending,
     Receiving,
-    socketStatusListener,
-    Error;
+    Error,
+    End;
 
-    private SocketClientStatus() {
+    SocketClientStatus() {
+        // Do nothing
     }
 }

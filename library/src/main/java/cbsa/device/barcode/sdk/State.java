@@ -59,10 +59,25 @@ public class State implements Closeable {
             buffer.write(data, 0, readBytes);
             this.receiveBuffer = buffer.toByteArray();
         }
-
         buffer.flush();
         buffer.close();
         return readBytes;
+    }
+
+    public byte[] receiveBytes() throws IOException {
+        Timber.i("receive");
+        InputStream inputStream = this.socket.getInputStream();
+        byte[] data = new byte[1024];
+        byte[] byteRs = null;
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        int readBytes = inputStream.read(data);
+        if (readBytes > 0) {
+            buffer.write(data, 0, readBytes);
+            byteRs = buffer.toByteArray();
+        }
+        buffer.flush();
+        buffer.close();
+        return byteRs;
     }
 
     public boolean isConnected() {

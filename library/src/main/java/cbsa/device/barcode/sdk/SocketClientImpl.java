@@ -3,10 +3,13 @@ package cbsa.device.barcode.sdk;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
-import cbsa.device.barcode.exception.BarCodeOutputDataError;
-import cbsa.device.barcode.exception.BarcodeDeviceNotConnectError;
-import cbsa.device.barcode.exception.BarCodeInputDataException;
+import cbsa.device.barcode.exception.BarcodeScannerException;
+import cbsa.device.barcode.exception.ReceiveDataError;
+import cbsa.device.barcode.exception.CannotConnectError;
+import cbsa.device.barcode.exception.InputDataError;
 import timber.log.Timber;
+
+import static cbsa.device.Constant.LOG_TAG;
 
 public class SocketClientImpl implements SocketClient {
     private SocketStatusListener socketStatusListener;
@@ -18,7 +21,7 @@ public class SocketClientImpl implements SocketClient {
         this.socketStatusListener = socketStatusListener;
     }
 
-    public String send(String ipAddress, int port, int connectionTimeout, byte[] sendBuffer) throws IOException, BarcodeDeviceNotConnectError {
+    public String send(String ipAddress, int port, int connectionTimeout, byte[] sendBuffer) throws IOException, BarcodeScannerException {
         this.socketStatusListener.onStatusChange(SocketClientStatus.Connecting);
         State state = State.create(sendBuffer, 1024);
 
@@ -27,7 +30,7 @@ public class SocketClientImpl implements SocketClient {
             if (!state.isConnected()) {
                 this.socketStatusListener.onError("Socket not connected!");
                 this.closeState(state);
-                throw new BarcodeDeviceNotConnectError();
+                throw new CannotConnectError();
             }
 
             this.socketStatusListener.onStatusChange(SocketClientStatus.Sending);
@@ -35,21 +38,21 @@ public class SocketClientImpl implements SocketClient {
             if (bytesSent < 1) {
                 this.socketStatusListener.onError("Nothing sent!");
                 this.closeState(state);
-                throw new BarCodeInputDataException();
+                throw new InputDataError();
             }
         } catch (IOException var7) {
-            Timber.e(var7, "vtt - interrupted exception");
+            Timber.e(var7, LOG_TAG + "interrupted exception");
             this.socketStatusListener.onError(var7.getMessage());
             this.closeState(state);
             throw var7;
         }
-        Timber.i("vtt - End sent");
+        Timber.i(LOG_TAG + "End sent");
         String barcode = handleReceiveBytes(state);
         closeState(state);
         return barcode;
     }
 
-    private String handleReceiveBytes(State state) throws IOException {
+    private String handleReceiveBytes(State state) throws IOException, ReceiveDataError {
         this.socketStatusListener.onStatusChange(SocketClientStatus.Receiving);
         int receivedBytes;
         try {
@@ -57,7 +60,7 @@ public class SocketClientImpl implements SocketClient {
             if (receivedBytes > 0) {
                 return this.assertReceiveBuffer(state.getReceiveBuffer());
             } else {
-                throw new BarCodeOutputDataError();
+                throw new ReceiveDataError();
             }
         } catch (IOException ioe) {
             this.socketStatusListener.onError(ioe.getMessage());
