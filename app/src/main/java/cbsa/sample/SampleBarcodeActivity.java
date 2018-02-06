@@ -2,6 +2,9 @@ package cbsa.sample;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
@@ -51,6 +54,8 @@ public class SampleBarcodeActivity extends AppCompatActivity implements ServiceB
         btnStartListener.setEnabled(true);
     }
 
+    private TextView tvIp;
+    private TextView tvPort;
     private Button btnStartListener;
     private Button btnScan;
     private Button btnStopListener;
@@ -61,10 +66,42 @@ public class SampleBarcodeActivity extends AppCompatActivity implements ServiceB
         setContentView(R.layout.activity_main);
         isConnect = findViewById(R.id.isConnect);
         scanStatus = findViewById(R.id.scanStatus);
+        tvIp = findViewById(R.id.tvIp);
+        tvPort = findViewById(R.id.tvPort);
+        scanStatus = findViewById(R.id.scanStatus);
         btnScan = findViewById(R.id.btnScan);
         btnStopListener = findViewById(R.id.btnStopListener);
         btnStartListener = findViewById(R.id.btnStartListener);
+        tvIp.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
 
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                updateConfig();
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+            }
+        });
+        tvPort.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                updateConfig();
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+            }
+        });
         btnScan.setOnClickListener(view -> {
             if (service != null) {
                 scanStatus.setText("Scanning...");
@@ -87,7 +124,8 @@ public class SampleBarcodeActivity extends AppCompatActivity implements ServiceB
                 if (isBarcodeDeviceConnected) {
                     btnStopListener.setEnabled(true);
                     btnScan.setEnabled(false);
-                    scanStatus.setText("Auto Scan");
+                    isConnect.setText("Auto listen value...");
+                    scanStatus.setText("Waiting...");
                     service.startListener(getDisposal());
                 } else {
                     service.isConnected(connectResultCallback);
@@ -164,7 +202,14 @@ public class SampleBarcodeActivity extends AppCompatActivity implements ServiceB
     public void onServiceConnected(DeviceService deviceService) {
         Timber.i("vtt onServiceConnected: ");
         service = deviceService.getBarCodeService();
+        updateConfig();
         service.isConnected(connectResultCallback);
+    }
+
+    private void updateConfig() {
+        if (service != null) {
+            service.updateConfig(tvIp.getText().toString(), tvPort.getText().toString());
+        }
     }
 
     @Override

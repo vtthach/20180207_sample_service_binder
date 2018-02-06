@@ -10,4 +10,9 @@ public class BarcodeScannerConfig {
         this.port = port;
         this.timeoutInMillis = timeoutInMillis;
     }
+
+    public void update(String ip, int port) {
+        this.ipAddress = ip;
+        this.port = port;
+    }
 }

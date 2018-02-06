@@ -7,6 +7,9 @@ import java.util.concurrent.Executors;
 import javax.inject.Inject;
 
 import cbsa.device.barcode.ResultCallback;
+import cbsa.device.barcode.sdk.SocketClientStatus;
+import cbsa.device.barcode.sdk.SocketStatusListener;
+import cbsa.device.barcode.sdk.v2.BarcodeScannerConfig;
 import cbsa.device.barcode.sdk.v2.BarcodeScannerWrapper;
 import cbsa.device.barcode.sdk.v2.CardScannerServiceV2;
 import io.reactivex.Observable;
@@ -14,18 +17,42 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.observers.DisposableObserver;
 import io.reactivex.schedulers.Schedulers;
+import io.reactivex.subjects.PublishSubject;
 import timber.log.Timber;
 
 public class BarcodeServiceV2Impl implements BarcodeService {
 
+    private final BarcodeScannerConfig config;
     private DisposableObserver<String> scanDisposal;
     private final BarcodeScannerWrapper barcodeScannerWrapper;
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
     private ExecutorService myExecutor;
+    private SocketStatusListener autoScanListener = new SocketStatusListener() {
+        @Override
+        public void onStatusChange(SocketClientStatus var1) {
+
+        }
+
+        @Override
+        public void onReceive(String var1) {
+            if (publisher != null) {
+                publisher.onNext(var1);
+            }
+        }
+
+        @Override
+        public void onError(String var1) {
+            if (publisher != null) {
+                publisher.onError(new Throwable(var1));
+            }
+        }
+    };
+    private PublishSubject<String> publisher;
 
     @Inject
     public BarcodeServiceV2Impl(BarcodeScannerWrapper barcodeScannerWrapper) {
         this.barcodeScannerWrapper = barcodeScannerWrapper;
+        this.config = this.barcodeScannerWrapper.getConfig();
     }
 
     @Override
@@ -107,9 +134,13 @@ public class BarcodeServiceV2Impl implements BarcodeService {
         return Executors.newSingleThreadExecutor();
     }
 
-    private Observable<Boolean> getObservableListener(DisposableObserver<String> subscriber) {
+    private Observable<Boolean> getObservableListener(final DisposableObserver<String> subscriber) {
         return Observable.defer(() -> {
-            barcodeScannerWrapper.startListener(subscriber);
+            publisher = PublishSubject.create();
+            publisher.observeOn(AndroidSchedulers.mainThread())
+                    .subscribeOn(Schedulers.io())
+                    .subscribe(subscriber);
+            barcodeScannerWrapper.startListener(autoScanListener);
             return Observable.just(true);
         });
     }
@@ -122,6 +153,11 @@ public class BarcodeServiceV2Impl implements BarcodeService {
         if (myExecutor != null) {
             myExecutor.shutdownNow();
         }
+    }
+
+    @Override
+    public void updateConfig(String ip, String port) {
+        config.update(ip, Integer.parseInt(port));
     }
 
     private void disposePreviousRequest() {

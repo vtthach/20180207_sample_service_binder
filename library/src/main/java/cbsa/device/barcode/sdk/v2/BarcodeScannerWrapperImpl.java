@@ -104,6 +104,11 @@ public class BarcodeScannerWrapperImpl implements BarcodeScannerWrapper {
         return startManualReceiveData(manualState);
     }
 
+    @Override
+    public BarcodeScannerConfig getConfig() {
+        return config;
+    }
+
     private void onStartListener(State listenerState) throws BarcodeScannerException {
         tryConnect(listenerState);
         registerData(listenerState);

@@ -88,6 +88,11 @@ public class BarcodeServiceImpl implements BarcodeService {
         // Do nothing
     }
 
+    @Override
+    public void updateConfig(String text, String text1) {
+        // Do nothing
+    }
+
     private void disposePreviousRequest() {
         if (scanDisposal != null) {
             scanDisposal.dispose();

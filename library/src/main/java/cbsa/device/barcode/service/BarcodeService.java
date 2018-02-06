@@ -10,4 +10,6 @@ public interface BarcodeService extends BaseDeviceService {
     void startListener(DisposableObserver<String> subscriber);
 
     void stopListener();
+
+    void updateConfig(String text, String text1);
 }

@@ -3,10 +3,7 @@ package cbsa.device.injection;
 
 import javax.inject.Singleton;
 
-import cbsa.device.barcode.sdk.CardScannerService;
-import cbsa.device.barcode.sdk.CardScannerServiceImpl;
-import cbsa.device.barcode.sdk.SocketClient;
-import cbsa.device.barcode.sdk.SocketClientImpl;
+import cbsa.device.barcode.sdk.v2.BarcodeScannerConfig;
 import cbsa.device.barcode.sdk.v2.BarcodeScannerWrapper;
 import cbsa.device.barcode.sdk.v2.BarcodeScannerWrapperImpl;
 import cbsa.device.barcode.sdk.v2.CardScannerServiceV2;
@@ -39,12 +36,18 @@ public class BarcodeServiceV2Module {
     @Provides
     @Singleton
     CardScannerServiceV2 provideCardScannerServiceV2(BarcodeScannerWrapper scanWrapper) {
-        return new CardScannerServiceV2Impl(scanWrapper, ipAddress, port, connectionTimeout);
+        return new CardScannerServiceV2Impl(scanWrapper);
     }
 
     @Provides
     @Singleton
-    BarcodeScannerWrapper provideBarcodeScannerWrapper() {
-        return new BarcodeScannerWrapperImpl(ipAddress, port, connectionTimeout);
+    BarcodeScannerWrapper provideBarcodeScannerWrapper(BarcodeScannerConfig config) {
+        return new BarcodeScannerWrapperImpl(config);
+    }
+
+    @Provides
+    @Singleton
+    BarcodeScannerConfig provideBarcodeScannerConfig() {
+        return new BarcodeScannerConfig(ipAddress, port, connectionTimeout);
     }
 }
