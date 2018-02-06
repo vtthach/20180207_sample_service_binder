@@ -1,8 +1,6 @@
 package cbsa.device.barcode.service;
 
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -10,17 +8,9 @@ import javax.inject.Inject;
 
 import cbsa.device.barcode.ResultCallback;
 import cbsa.device.barcode.sdk.v2.CardScannerServiceV2;
-import io.reactivex.CompletableObserver;
 import io.reactivex.Observable;
-import io.reactivex.ObservableEmitter;
-import io.reactivex.ObservableOnSubscribe;
-import io.reactivex.ObservableSource;
-import io.reactivex.Observer;
-import io.reactivex.Scheduler;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.internal.operators.completable.CompletableToObservable;
-import io.reactivex.internal.operators.flowable.FlowableJust;
 import io.reactivex.observers.DisposableObserver;
 import io.reactivex.schedulers.Schedulers;
 import timber.log.Timber;
@@ -30,7 +20,7 @@ public class BarcodeServiceV2Impl implements BarcodeService {
     private DisposableObserver<String> scanDisposal;
     private final CardScannerServiceV2 cardScannerService;
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
-    private ExecutorService myExecutor = Executors.newSingleThreadExecutor();
+    private ExecutorService myExecutor;
 
     @Inject
     public BarcodeServiceV2Impl(CardScannerServiceV2 cardScannerService) {
@@ -87,7 +77,8 @@ public class BarcodeServiceV2Impl implements BarcodeService {
     }
 
     @Override
-    public void startListener() {
+    public void startListener(DisposableObserver<String> subscriber) {
+        myExecutor = buildCustomExecutor();
         DisposableObserver<Boolean> disposal = new DisposableObserver<Boolean>() {
             @Override
             public void onNext(Boolean aBoolean) {
@@ -104,27 +95,51 @@ public class BarcodeServiceV2Impl implements BarcodeService {
                 Timber.i("startListener onComplete");
             }
         };
-        getObservableListener()
+        getObservableListener(subscriber)
                 .subscribeOn(Schedulers.from(myExecutor))
                 .observeOn(Schedulers.from(myExecutor))
                 .subscribe(disposal);
+        compositeDisposable.add(disposal);
     }
 
-    private Observable<Boolean> getObservableListener() {
+    private ExecutorService buildCustomExecutor() {
+        return Executors.newSingleThreadExecutor();
+    }
+
+    private Observable<Boolean> getObservableListener(DisposableObserver<String> subscriber) {
         return Observable.defer(() -> {
-            cardScannerService.startListener();
+            cardScannerService.startListener(subscriber);
             return Observable.just(true);
         });
     }
 
+    private DisposableObserver<String> getSubscriber() {
+        return new DisposableObserver<String>() {
+            @Override
+            public void onNext(String s) {
+
+            }
+
+            @Override
+            public void onError(Throwable e) {
+
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        };
+    }
+
     @Override
     public void stopListener() {
-        if (!myExecutor.isShutdown()) {
-            myExecutor.shutdown();
-        }
+        cardScannerService.stopListener();
         disposePreviousRequest();
         stopAllTask();
-        cardScannerService.stopListener();
+        if (myExecutor != null) {
+            myExecutor.shutdownNow();
+        }
     }
 
     private void disposePreviousRequest() {

@@ -19,12 +19,13 @@ import static cbsa.device.Constant.LOG_TAG;
 
 public class BarcodeScannerWrapperImpl implements BarcodeScannerWrapper {
 
-    private final State state;
+    private State state;
     private final String ipAddress;
     private final int port;
     private final int timeoutInMillis;
 
     private SocketStatusListener socketStatusListener;
+    private boolean isRunning;
 
     public BarcodeScannerWrapperImpl(String ipAddress,
                                      int port,
@@ -32,7 +33,6 @@ public class BarcodeScannerWrapperImpl implements BarcodeScannerWrapper {
         this.ipAddress = ipAddress;
         this.port = port;
         this.timeoutInMillis = timeoutInMillis;
-        state = initState();
     }
 
     private State initState() {
@@ -44,24 +44,27 @@ public class BarcodeScannerWrapperImpl implements BarcodeScannerWrapper {
         state.connect(ipAddress, port, timeoutInMillis);
     }
 
-    public synchronized void startListener(SocketStatusListener listener) {
+    public void startListener(SocketStatusListener listener) {
         Timber.i(LOG_TAG + "-> startListener");
         this.socketStatusListener = listener;
+        isRunning = true;
+        state = initState();
         try {
             onStartListener();
-            while (state.isConnected()) {
+            while (isRunning && !Thread.interrupted() && state.isConnected()) {
                 receiveData();
             }
         } catch (BarcodeScannerException e) {
-            Timber.e(e, LOG_TAG + "startListener error : " + e.getMessage());
+            Timber.d(e, LOG_TAG + "startListener error : " + e.getMessage());
             notifyError(e.getMessage());
         } finally {
             onEndListener();
         }
     }
 
-    public synchronized void stopListener() {
-        disconnectIfAny();
+    @Override
+    public void stopListener() {
+        isRunning = false;
     }
 
     private void notifyError(String message) {
@@ -103,9 +106,9 @@ public class BarcodeScannerWrapperImpl implements BarcodeScannerWrapper {
 
     private void receiveData() throws ReceiveDataError {
         try {
-            Timber.i("->>>> Receive data START");
+            Timber.i(LOG_TAG + "->>>> Receive data START");
             socketStatusListener.onReceive(parseData(state.receiveBytes()));
-            Timber.i("-<<<< Receive data END");
+            Timber.i(LOG_TAG + "-<<<< Receive data END");
         } catch (IOException e) {
             throw new ReceiveDataError();
         }

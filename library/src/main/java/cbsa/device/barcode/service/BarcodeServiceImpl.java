@@ -2,26 +2,17 @@ package cbsa.device.barcode.service;
 
 
 import java.io.IOException;
-import java.util.List;
 
 import javax.inject.Inject;
 
 import cbsa.device.barcode.ResultCallback;
 import cbsa.device.barcode.exception.BarcodeScannerException;
 import cbsa.device.barcode.sdk.CardScannerService;
-import cbsa.device.barcode.sdk.SocketClientStatus;
-import cbsa.device.barcode.sdk.SocketStatusListener;
-import cbsa.device.barcode.sdk.v2.device.DeviceDetector;
-import cbsa.device.barcode.sdk.v2.device.DeviceDetectorImpl;
-import cbsa.device.barcode.sdk.v2.device.BarcodeScanner;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.observers.DisposableObserver;
 import io.reactivex.schedulers.Schedulers;
-import timber.log.Timber;
-
-import static cbsa.device.Constant.LOG_TAG;
 
 public class BarcodeServiceImpl implements BarcodeService {
 
@@ -88,7 +79,7 @@ public class BarcodeServiceImpl implements BarcodeService {
     }
 
     @Override
-    public void startListener() {
+    public void startListener(DisposableObserver<String> subscriber) {
         // Do nothing
     }
 
