@@ -10,4 +10,6 @@ public interface CardScannerServiceV2 {
     void stopListener();
 
     boolean isOnline() throws DisconnectError;
+
+    String scan();
 }

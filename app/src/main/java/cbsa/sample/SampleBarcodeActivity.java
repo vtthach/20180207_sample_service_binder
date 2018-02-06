@@ -20,56 +20,84 @@ public class SampleBarcodeActivity extends AppCompatActivity implements ServiceB
 
     ServiceBinder<DeviceService> serviceBinder;
 
-    TextView textView;
+    TextView isConnect;
     TextView scanStatus;
+
     private BarcodeService service;
     private Boolean isBarcodeDeviceConnected;
     private DisposableObserver<String> dis;
+
+    private ResultCallback<Boolean> connectResultCallback = new ResultCallback<Boolean>() {
+        @Override
+        public void onSuccess(Boolean result) {
+            isConnect.setText(result ? "Connected" : "Disconnected");
+            updateFlagConnection(result);
+        }
+
+        @Override
+        public void onError(String reason) {
+            isConnect.setText(reason);
+            updateFlagConnection(false);
+        }
+    };
+
+    private void updateFlagConnection(Boolean result) {
+        isBarcodeDeviceConnected = result;
+        if (result) {
+            btnStartListener.setText("Start listener");
+        } else {
+            btnStartListener.setText("Check device status");
+        }
+        btnStartListener.setEnabled(true);
+    }
+
+    private Button btnStartListener;
+    private Button btnScan;
+    private Button btnStopListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        textView = findViewById(R.id.isConnect);
+        isConnect = findViewById(R.id.isConnect);
         scanStatus = findViewById(R.id.scanStatus);
-        Button btnScan = findViewById(R.id.btnScan);
+        btnScan = findViewById(R.id.btnScan);
+        btnStopListener = findViewById(R.id.btnStopListener);
+        btnStartListener = findViewById(R.id.btnStartListener);
+
         btnScan.setOnClickListener(view -> {
             if (service != null) {
-//                scanStatus.setText("Scan...");
-//                service.scan(new ResultCallback<String>() {
-//                    @Override
-//                    public void onSuccess(String result) {
-//                        scanStatus.setText(String.format("%s (Time: %s)", result, System.currentTimeMillis()));
-//                    }
-//
-//                    @Override
-//                    public void onError(String reason) {
-//                        scanStatus.setText(reason);
-//                    }
-//                });
+                scanStatus.setText("Scanning...");
+                service.scan(new ResultCallback<String>() {
+                    @Override
+                    public void onSuccess(String result) {
+                        scanStatus.setText(result + "(Time: " + DateFormat.getTimeInstance().format(new Date()) + ")");
+                    }
+
+                    @Override
+                    public void onError(String reason) {
+                        scanStatus.setText(reason);
+                    }
+                });
             }
         });
-        Button btnStopListener = findViewById(R.id.btnStopListener);
-        Button btnStartListener = findViewById(R.id.btnStartListener);
-
         btnStartListener.setOnClickListener(view -> {
-            if (service != null && isBarcodeDeviceConnected) {
-                btnStopListener.setEnabled(true);
+            if (service != null) {
                 btnStartListener.setEnabled(false);
-                btnScan.setEnabled(false);
-                scanStatus.setText("Auto Scan");
-                service.startListener(getDisposal());
+                if (isBarcodeDeviceConnected) {
+                    btnStopListener.setEnabled(true);
+                    btnScan.setEnabled(false);
+                    scanStatus.setText("Auto Scan");
+                    service.startListener(getDisposal());
+                } else {
+                    service.isConnected(connectResultCallback);
+                }
             }
         });
 
         btnStopListener.setOnClickListener(view -> {
-            if (service != null && isBarcodeDeviceConnected) {
-                disposeListener();
-                btnScan.setEnabled(true);
-                scanStatus.setText("Manual Scan");
-                btnStopListener.setEnabled(false);
-                btnStartListener.setEnabled(true);
-                service.stopListener();
+            if (service != null) {
+                stopListener();
             }
         });
 
@@ -82,6 +110,15 @@ public class SampleBarcodeActivity extends AppCompatActivity implements ServiceB
 
     }
 
+    private void stopListener() {
+//        disposeListener();
+        btnScan.setEnabled(true);
+        scanStatus.setText("Manual Scan");
+        btnStopListener.setEnabled(false);
+        btnStartListener.setEnabled(true);
+        service.stopListener();
+    }
+
     private DisposableObserver<String> getDisposal() {
         disposeListener();
         dis = new DisposableObserver<String>() {
@@ -92,7 +129,9 @@ public class SampleBarcodeActivity extends AppCompatActivity implements ServiceB
 
             @Override
             public void onError(Throwable e) {
-
+                isConnect.setText(e.getMessage());
+                connectResultCallback.onSuccess(false);
+                stopListener();
             }
 
             @Override
@@ -125,19 +164,7 @@ public class SampleBarcodeActivity extends AppCompatActivity implements ServiceB
     public void onServiceConnected(DeviceService deviceService) {
         Timber.i("vtt onServiceConnected: ");
         service = deviceService.getBarCodeService();
-        service.isConnected(new ResultCallback<Boolean>() {
-            @Override
-            public void onSuccess(Boolean result) {
-                textView.setText(result ? "Connected" : "Disconnected");
-                isBarcodeDeviceConnected = result;
-            }
-
-            @Override
-            public void onError(String reason) {
-                textView.setText("Check device connect is error: " + reason);
-                isBarcodeDeviceConnected = false;
-            }
-        });
+        service.isConnected(connectResultCallback);
     }
 
     @Override

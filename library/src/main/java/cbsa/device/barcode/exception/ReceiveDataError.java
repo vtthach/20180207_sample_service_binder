@@ -6,6 +6,6 @@ package cbsa.device.barcode.exception;
  */
 public class ReceiveDataError extends BarcodeScannerException {
     public ReceiveDataError() {
-        super("Output data empty or invalid");
+        super("Device disconnected while reading data");
     }
 }

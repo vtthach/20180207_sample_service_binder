@@ -10,4 +10,6 @@ public interface BarcodeScannerWrapper {
     void stopListener();
 
     boolean isOnline() throws DisconnectError;
+
+    String scan();
 }

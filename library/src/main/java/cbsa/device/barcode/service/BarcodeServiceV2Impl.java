@@ -113,25 +113,6 @@ public class BarcodeServiceV2Impl implements BarcodeService {
         });
     }
 
-    private DisposableObserver<String> getSubscriber() {
-        return new DisposableObserver<String>() {
-            @Override
-            public void onNext(String s) {
-
-            }
-
-            @Override
-            public void onError(Throwable e) {
-
-            }
-
-            @Override
-            public void onComplete() {
-
-            }
-        };
-    }
-
     @Override
     public void stopListener() {
         cardScannerService.stopListener();
@@ -172,6 +153,6 @@ public class BarcodeServiceV2Impl implements BarcodeService {
     }
 
     private String getScanResult() throws Exception {
-        return "TODO";
+        return cardScannerService.scan();
     }
 }

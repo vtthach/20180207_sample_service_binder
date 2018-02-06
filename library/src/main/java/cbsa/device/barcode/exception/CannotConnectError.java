@@ -7,6 +7,6 @@ package cbsa.device.barcode.exception;
 public class CannotConnectError extends BarcodeScannerException {
 
     public CannotConnectError() {
-        super("Device not connect");
+        super("Device not connected");
     }
 }

@@ -2,8 +2,7 @@ package cbsa.device.barcode.sdk.v2;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-
-import javax.inject.Inject;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import cbsa.device.barcode.exception.InputDataError;
 import cbsa.device.barcode.exception.ReceiveDataError;
@@ -19,13 +18,13 @@ import static cbsa.device.Constant.LOG_TAG;
 
 public class BarcodeScannerWrapperImpl implements BarcodeScannerWrapper {
 
-    private State state;
+    private State autoListenerState;
     private final String ipAddress;
     private final int port;
     private final int timeoutInMillis;
 
     private SocketStatusListener socketStatusListener;
-    private boolean isRunning;
+    private AtomicBoolean isRunning = new AtomicBoolean();
 
     public BarcodeScannerWrapperImpl(String ipAddress,
                                      int port,
@@ -35,41 +34,59 @@ public class BarcodeScannerWrapperImpl implements BarcodeScannerWrapper {
         this.timeoutInMillis = timeoutInMillis;
     }
 
-    private State initState() {
+    private State getState() {
         byte[] sendBuffer = new byte[]{3, 2};
         return State.create(sendBuffer, 1024);
     }
 
-    private void connect() throws IOException {
-        state.connect(ipAddress, port, timeoutInMillis);
+    private void connect(State listenerState) throws IOException {
+        listenerState.connect(ipAddress, port, timeoutInMillis);
     }
 
     public void startListener(SocketStatusListener listener) {
         Timber.i(LOG_TAG + "-> startListener");
         this.socketStatusListener = listener;
-        isRunning = true;
-        state = initState();
+        isRunning.set(true);
+        autoListenerState = getState();
+        startAutoReceiveData(isRunning, autoListenerState, socketStatusListener);
+    }
+
+    private void startAutoReceiveData(AtomicBoolean isRunning, State autoListenerState, SocketStatusListener statusListener) {
         try {
-            onStartListener();
-            while (isRunning && !Thread.interrupted() && state.isConnected()) {
-                receiveData();
+            onStartListener(autoListenerState);
+            while (isRunning.get() && !Thread.interrupted() && autoListenerState.isConnected()) {
+                receiveData(autoListenerState, statusListener);
             }
         } catch (BarcodeScannerException e) {
             Timber.d(e, LOG_TAG + "startListener error : " + e.getMessage());
-            notifyError(e.getMessage());
+            notifyError(statusListener, e.getMessage());
         } finally {
-            onEndListener();
+            onEndListener(autoListenerState, statusListener);
         }
+    }
+
+    private String startManualReceiveData(State autoListenerState) {
+        String rs = null;
+        try {
+            onStartListener(autoListenerState);
+            rs = receiveData(autoListenerState, null);
+        } catch (BarcodeScannerException e) {
+            Timber.d(e, LOG_TAG + "startListener error : " + e.getMessage());
+        } finally {
+            onEndListener(autoListenerState, null);
+        }
+        return rs;
     }
 
     @Override
     public void stopListener() {
-        isRunning = false;
+        isRunning.set(false);
+//        disconnectIfAny(autoListenerState);
     }
 
-    private void notifyError(String message) {
-        if (socketStatusListener != null) {
-            socketStatusListener.onError(message);
+    private void notifyError(SocketStatusListener statusListener, String message) {
+        if (statusListener != null && isRunning.get()) {
+            statusListener.onError(message);
         }
     }
 
@@ -88,30 +105,42 @@ public class BarcodeScannerWrapperImpl implements BarcodeScannerWrapper {
         return isConnected;
     }
 
-    private void onStartListener() throws BarcodeScannerException {
-        tryConnect();
-        registerData();
+    @Override
+    public String scan() {
+        State manualState = getState();
+        return startManualReceiveData(manualState);
     }
 
-    private void onEndListener() {
-        disconnectIfAny();
-        notifyStatusChange(SocketClientStatus.End);
+    private void onStartListener(State listenerState) throws BarcodeScannerException {
+        tryConnect(listenerState);
+        registerData(listenerState);
     }
 
-    private void notifyStatusChange(SocketClientStatus status) {
-        if (socketStatusListener != null) {
-            socketStatusListener.onStatusChange(status);
+    private void onEndListener(State autoListenerState, SocketStatusListener statusListener) {
+        disconnectIfAny(autoListenerState);
+        notifyStatusChange(SocketClientStatus.End, statusListener);
+    }
+
+    private void notifyStatusChange(SocketClientStatus status, SocketStatusListener statusListener) {
+        if (statusListener != null && isRunning.get()) {
+            statusListener.onStatusChange(status);
         }
     }
 
-    private void receiveData() throws ReceiveDataError {
+    private String receiveData(State autoListenerState, SocketStatusListener statusListener) throws ReceiveDataError {
+        String data;
         try {
             Timber.i(LOG_TAG + "->>>> Receive data START");
-            socketStatusListener.onReceive(parseData(state.receiveBytes()));
+            byte[] bytes = autoListenerState.receiveBytes();
+            data = parseData(bytes);
+            if (statusListener != null) {
+                statusListener.onReceive(data);
+            }
             Timber.i(LOG_TAG + "-<<<< Receive data END");
         } catch (IOException e) {
             throw new ReceiveDataError();
         }
+        return data;
     }
 
     private String parseData(byte[] receiveBuffer) throws UnsupportedEncodingException {
@@ -127,10 +156,10 @@ public class BarcodeScannerWrapperImpl implements BarcodeScannerWrapper {
         return rs;
     }
 
-    private void registerData() throws BarcodeScannerException {
+    private void registerData(State listenerState) throws BarcodeScannerException {
         int bytesSent;
         try {
-            bytesSent = state.send();
+            bytesSent = listenerState.send();
         } catch (IOException e) {
             Timber.e(e, LOG_TAG + "registerData error: " + e.getMessage());
             throw new DisconnectError();
@@ -141,10 +170,10 @@ public class BarcodeScannerWrapperImpl implements BarcodeScannerWrapper {
         }
     }
 
-    private void tryConnect() throws CannotConnectError {
-        if (!state.isConnected()) {
+    private void tryConnect(State listenerState) throws CannotConnectError {
+        if (!listenerState.isConnected()) {
             try {
-                connect();
+                connect(listenerState);
             } catch (IOException e) {
                 Timber.e(LOG_TAG + "tryConnect error: " + e.getMessage());
                 throw new CannotConnectError();
@@ -160,9 +189,9 @@ public class BarcodeScannerWrapperImpl implements BarcodeScannerWrapper {
         }
     }
 
-    public void disconnectIfAny() {
-        if (state != null) {
-            closeState(state);
+    public void disconnectIfAny(State autoListenerState) {
+        if (autoListenerState != null) {
+            closeState(autoListenerState);
         }
     }
 }

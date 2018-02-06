@@ -29,11 +29,15 @@ public class CardScannerServiceV2Impl implements CardScannerServiceV2, SocketSta
         this.ipAddress = ipAddress;
         this.port = port;
         this.connectionTimeout = connectionTimeout;
-        publisher = PublishSubject.create();
     }
 
     public boolean isOnline() throws DisconnectError {
         return scannerWrapper.isOnline();
+    }
+
+    @Override
+    public String scan() {
+        return scannerWrapper.scan();
     }
 
     @Override
