@@ -7,6 +7,7 @@ import java.util.concurrent.Executors;
 import javax.inject.Inject;
 
 import cbsa.device.barcode.ResultCallback;
+import cbsa.device.barcode.sdk.v2.BarcodeScannerWrapper;
 import cbsa.device.barcode.sdk.v2.CardScannerServiceV2;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -18,13 +19,13 @@ import timber.log.Timber;
 public class BarcodeServiceV2Impl implements BarcodeService {
 
     private DisposableObserver<String> scanDisposal;
-    private final CardScannerServiceV2 cardScannerService;
+    private final BarcodeScannerWrapper barcodeScannerWrapper;
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
     private ExecutorService myExecutor;
 
     @Inject
-    public BarcodeServiceV2Impl(CardScannerServiceV2 cardScannerService) {
-        this.cardScannerService = cardScannerService;
+    public BarcodeServiceV2Impl(BarcodeScannerWrapper barcodeScannerWrapper) {
+        this.barcodeScannerWrapper = barcodeScannerWrapper;
     }
 
     @Override
@@ -62,7 +63,7 @@ public class BarcodeServiceV2Impl implements BarcodeService {
     }
 
     private Observable<Boolean> getDeviceStateObservable() {
-        return Observable.defer(() -> Observable.just(cardScannerService.isOnline()));
+        return Observable.defer(() -> Observable.just(barcodeScannerWrapper.isOnline()));
     }
 
     @Override
@@ -108,14 +109,14 @@ public class BarcodeServiceV2Impl implements BarcodeService {
 
     private Observable<Boolean> getObservableListener(DisposableObserver<String> subscriber) {
         return Observable.defer(() -> {
-            cardScannerService.startListener(subscriber);
+            barcodeScannerWrapper.startListener(subscriber);
             return Observable.just(true);
         });
     }
 
     @Override
     public void stopListener() {
-        cardScannerService.stopListener();
+        barcodeScannerWrapper.stopListener();
         disposePreviousRequest();
         stopAllTask();
         if (myExecutor != null) {
@@ -153,6 +154,6 @@ public class BarcodeServiceV2Impl implements BarcodeService {
     }
 
     private String getScanResult() throws Exception {
-        return cardScannerService.scan();
+        return barcodeScannerWrapper.scan();
     }
 }

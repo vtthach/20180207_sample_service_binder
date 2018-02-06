@@ -17,18 +17,11 @@ import timber.log.Timber;
  */
 public class CardScannerServiceV2Impl implements CardScannerServiceV2, SocketStatusListener {
     private final BarcodeScannerWrapper scannerWrapper;
-    private final String ipAddress;
-    private final int port;
-    private final int connectionTimeout;
-    private String latestScanResult;
 
     private PublishSubject<String> publisher;
 
-    public CardScannerServiceV2Impl(BarcodeScannerWrapper scannerWrapper, String ipAddress, int port, int connectionTimeout) {
+    public CardScannerServiceV2Impl(BarcodeScannerWrapper scannerWrapper) {
         this.scannerWrapper = scannerWrapper;
-        this.ipAddress = ipAddress;
-        this.port = port;
-        this.connectionTimeout = connectionTimeout;
     }
 
     public boolean isOnline() throws DisconnectError {
@@ -60,7 +53,9 @@ public class CardScannerServiceV2Impl implements CardScannerServiceV2, SocketSta
     @Override
     public void startListener(DisposableObserver<String> subscriber) {
         publisher = PublishSubject.create();
-        publisher.observeOn(AndroidSchedulers.mainThread()).subscribeOn(Schedulers.io()).subscribe(subscriber);
+        publisher.observeOn(AndroidSchedulers.mainThread())
+                .subscribeOn(Schedulers.io())
+                .subscribe(subscriber);
         scannerWrapper.startListener(this);
     }
 

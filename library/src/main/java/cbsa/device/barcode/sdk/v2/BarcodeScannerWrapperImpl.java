@@ -19,19 +19,13 @@ import static cbsa.device.Constant.LOG_TAG;
 public class BarcodeScannerWrapperImpl implements BarcodeScannerWrapper {
 
     private State autoListenerState;
-    private final String ipAddress;
-    private final int port;
-    private final int timeoutInMillis;
+    private final BarcodeScannerConfig config;
 
     private SocketStatusListener socketStatusListener;
     private AtomicBoolean isRunning = new AtomicBoolean();
 
-    public BarcodeScannerWrapperImpl(String ipAddress,
-                                     int port,
-                                     int timeoutInMillis) {
-        this.ipAddress = ipAddress;
-        this.port = port;
-        this.timeoutInMillis = timeoutInMillis;
+    public BarcodeScannerWrapperImpl(BarcodeScannerConfig config) {
+        this.config = config;
     }
 
     private State getState() {
@@ -40,7 +34,7 @@ public class BarcodeScannerWrapperImpl implements BarcodeScannerWrapper {
     }
 
     private void connect(State listenerState) throws IOException {
-        listenerState.connect(ipAddress, port, timeoutInMillis);
+        listenerState.connect(config.ipAddress, config.port, config.timeoutInMillis);
     }
 
     public void startListener(SocketStatusListener listener) {
@@ -81,7 +75,6 @@ public class BarcodeScannerWrapperImpl implements BarcodeScannerWrapper {
     @Override
     public void stopListener() {
         isRunning.set(false);
-//        disconnectIfAny(autoListenerState);
     }
 
     private void notifyError(SocketStatusListener statusListener, String message) {
@@ -95,7 +88,7 @@ public class BarcodeScannerWrapperImpl implements BarcodeScannerWrapper {
         State onlineState = State.create(null, 0);
         boolean isConnected;
         try {
-            onlineState.connect(ipAddress, port, timeoutInMillis);
+            onlineState.connect(config.ipAddress, config.port, config.timeoutInMillis);
             isConnected = onlineState.isConnected();
         } catch (IOException var10) {
             throw new DisconnectError();
