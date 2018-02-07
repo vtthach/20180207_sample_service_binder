@@ -7,7 +7,6 @@ import javax.inject.Inject;
 
 import cbsa.device.barcode.service.BarcodeService;
 import cbsa.device.injection.BarcodeServiceModule;
-import cbsa.device.injection.BarcodeServiceV2Module;
 import cbsa.device.injection.DaggerDeviceServiceComponent;
 import cbsa.device.injection.DeviceServiceModule;
 import cbsa.device.presenter.DeviceServicePresenter;
@@ -19,6 +18,10 @@ import timber.log.Timber;
  * Consider using aidl if this service run on other process and serve multiple app
  */
 public class DeviceServiceNative extends BaseStickyService<DeviceService> implements DeviceService {
+
+    public static final String KEY_IP_ADDRESS = "KEY_IP_ADDRESS";
+    public static final String KEY_PORT = "KEY_PORT";
+    public static final String KEY_CONNECTION_TIMEOUT_IN_MILLIS = "KEY_CONNECTION_TIMEOUT_IN_MILLIS";
 
     @Inject
     DeviceServicePresenter servicePresenter;
@@ -38,15 +41,9 @@ public class DeviceServiceNative extends BaseStickyService<DeviceService> implem
     private void setUpComponent() {
         DaggerDeviceServiceComponent
                 .builder()
-                .barcodeServiceV2Module(getBarCodeServiceModule())
                 .deviceServiceModule(new DeviceServiceModule(this))
                 .build()
                 .inject(this);
-    }
-
-    private BarcodeServiceV2Module getBarCodeServiceModule() {
-        // TODO remove hardcode when get define from BE
-        return new BarcodeServiceV2Module("192.168.1.12", 20108, 5000);
     }
 
     @Override
@@ -58,7 +55,7 @@ public class DeviceServiceNative extends BaseStickyService<DeviceService> implem
     protected void onStartCheckIntent(Intent intent) {
         super.onStartCheckIntent(intent);
         Timber.i("onStartCheckIntent: %s", intent.toString());
-
+        servicePresenter.getBarcodeService().initConfig(intent);
     }
 
     @Override

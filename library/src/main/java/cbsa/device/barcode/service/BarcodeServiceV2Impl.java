@@ -1,6 +1,8 @@
 package cbsa.device.barcode.service;
 
 
+import android.content.Intent;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -9,10 +11,10 @@ import javax.inject.Inject;
 import cbsa.device.barcode.ResultCallback;
 import cbsa.device.barcode.sdk.SocketClientStatus;
 import cbsa.device.barcode.sdk.SocketStatusListener;
-import cbsa.device.barcode.sdk.v2.BarcodeScannerConfig;
-import cbsa.device.barcode.sdk.v2.BarcodeScannerWrapper;
-import cbsa.device.barcode.sdk.v2.CardScannerServiceV2;
+import cbsa.device.barcode.sdk.BarcodeScannerConfig;
+import cbsa.device.barcode.sdk.BarcodeScannerWrapper;
 import io.reactivex.Observable;
+import io.reactivex.Scheduler;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.observers.DisposableObserver;
@@ -20,13 +22,19 @@ import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.PublishSubject;
 import timber.log.Timber;
 
+import static cbsa.device.service.DeviceServiceNative.KEY_CONNECTION_TIMEOUT_IN_MILLIS;
+import static cbsa.device.service.DeviceServiceNative.KEY_IP_ADDRESS;
+import static cbsa.device.service.DeviceServiceNative.KEY_PORT;
+
 public class BarcodeServiceV2Impl implements BarcodeService {
 
+    private static final int DEFAULT_PORT = 20108;
+    private static final int DEFAULT_TIMEOUT = 5000;
+    private static final String DEFAULT_IP_ADDRESS = "192.168.1.12";
     private final BarcodeScannerConfig config;
     private DisposableObserver<String> scanDisposal;
     private final BarcodeScannerWrapper barcodeScannerWrapper;
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
-    private ExecutorService myExecutor;
     private SocketStatusListener autoScanListener = new SocketStatusListener() {
         @Override
         public void onStatusChange(SocketClientStatus var1) {
@@ -35,7 +43,7 @@ public class BarcodeServiceV2Impl implements BarcodeService {
 
         @Override
         public void onReceive(String var1) {
-            if (publisher != null) {
+            if (publisher != null && var1 != null) {
                 publisher.onNext(var1);
             }
         }
@@ -48,6 +56,7 @@ public class BarcodeServiceV2Impl implements BarcodeService {
         }
     };
     private PublishSubject<String> publisher;
+    private DisposableObserver<Boolean> autoScanDisposable;
 
     @Inject
     public BarcodeServiceV2Impl(BarcodeScannerWrapper barcodeScannerWrapper) {
@@ -95,10 +104,10 @@ public class BarcodeServiceV2Impl implements BarcodeService {
 
     @Override
     public void scan(ResultCallback<String> resultCallback) {
-        disposePreviousRequest();
+        disposeDisposal(scanDisposal);
         scanDisposal = getScanResultDisposal(resultCallback);
         getScanResultObservable()
-                .subscribeOn(Schedulers.io())
+                .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(scanDisposal);
         compositeDisposable.add(scanDisposal);
@@ -106,8 +115,8 @@ public class BarcodeServiceV2Impl implements BarcodeService {
 
     @Override
     public void startListener(DisposableObserver<String> subscriber) {
-        myExecutor = buildCustomExecutor();
-        DisposableObserver<Boolean> disposal = new DisposableObserver<Boolean>() {
+        disposeDisposal(autoScanDisposable);
+        autoScanDisposable = new DisposableObserver<Boolean>() {
             @Override
             public void onNext(Boolean aBoolean) {
                 Timber.i("startListener onNext");
@@ -123,11 +132,12 @@ public class BarcodeServiceV2Impl implements BarcodeService {
                 Timber.i("startListener onComplete");
             }
         };
+        Scheduler scheduler = Schedulers.newThread();
         getObservableListener(subscriber)
-                .subscribeOn(Schedulers.from(myExecutor))
-                .observeOn(Schedulers.from(myExecutor))
-                .subscribe(disposal);
-        compositeDisposable.add(disposal);
+                .subscribeOn(scheduler)
+                .observeOn(scheduler)
+                .subscribe(autoScanDisposable);
+        compositeDisposable.add(autoScanDisposable);
     }
 
     private ExecutorService buildCustomExecutor() {
@@ -148,11 +158,7 @@ public class BarcodeServiceV2Impl implements BarcodeService {
     @Override
     public void stopListener() {
         barcodeScannerWrapper.stopListener();
-        disposePreviousRequest();
-        stopAllTask();
-        if (myExecutor != null) {
-            myExecutor.shutdownNow();
-        }
+        disposeDisposal(scanDisposal);
     }
 
     @Override
@@ -160,9 +166,17 @@ public class BarcodeServiceV2Impl implements BarcodeService {
         config.update(ip, Integer.parseInt(port));
     }
 
-    private void disposePreviousRequest() {
-        if (scanDisposal != null) {
-            scanDisposal.dispose();
+    @Override
+    public void initConfig(Intent intent) {
+        String ipAddress = intent.getStringExtra(KEY_IP_ADDRESS);
+        int port = intent.getIntExtra(KEY_PORT, DEFAULT_PORT);
+        int timeout = intent.getIntExtra(KEY_CONNECTION_TIMEOUT_IN_MILLIS, DEFAULT_TIMEOUT);
+        config.update(ipAddress != null ? ipAddress : DEFAULT_IP_ADDRESS, port, timeout);
+    }
+
+    private void disposeDisposal(DisposableObserver<?> disposal) {
+        if (disposal != null) {
+            disposal.dispose();
         }
     }
 

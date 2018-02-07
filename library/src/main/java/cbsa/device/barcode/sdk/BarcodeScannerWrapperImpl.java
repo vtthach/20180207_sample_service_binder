@@ -1,4 +1,4 @@
-package cbsa.device.barcode.sdk.v2;
+package cbsa.device.barcode.sdk;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -9,9 +9,6 @@ import cbsa.device.barcode.exception.ReceiveDataError;
 import cbsa.device.barcode.exception.DisconnectError;
 import cbsa.device.barcode.exception.CannotConnectError;
 import cbsa.device.barcode.exception.BarcodeScannerException;
-import cbsa.device.barcode.sdk.SocketClientStatus;
-import cbsa.device.barcode.sdk.SocketStatusListener;
-import cbsa.device.barcode.sdk.State;
 import timber.log.Timber;
 
 import static cbsa.device.Constant.LOG_TAG;
@@ -23,6 +20,7 @@ public class BarcodeScannerWrapperImpl implements BarcodeScannerWrapper {
 
     private SocketStatusListener socketStatusListener;
     private AtomicBoolean isRunning = new AtomicBoolean();
+    private State manualState;
 
     public BarcodeScannerWrapperImpl(BarcodeScannerConfig config) {
         this.config = config;
@@ -34,7 +32,7 @@ public class BarcodeScannerWrapperImpl implements BarcodeScannerWrapper {
     }
 
     private void connect(State listenerState) throws IOException {
-        listenerState.connect(config.ipAddress, config.port, config.timeoutInMillis);
+        listenerState.connect(config.getIpAddress(), config.getPort(), config.getTimeoutInMillis());
     }
 
     public void startListener(SocketStatusListener listener) {
@@ -59,15 +57,15 @@ public class BarcodeScannerWrapperImpl implements BarcodeScannerWrapper {
         }
     }
 
-    private String startManualReceiveData(State autoListenerState) {
+    private String startManualReceiveData(State state) {
         String rs = null;
         try {
-            onStartListener(autoListenerState);
-            rs = receiveData(autoListenerState, null);
+            onStartListener(state);
+            rs = receiveData(state, null);
         } catch (BarcodeScannerException e) {
             Timber.d(e, LOG_TAG + "startListener error : " + e.getMessage());
         } finally {
-            onEndListener(autoListenerState, null);
+            onEndListener(state, null);
         }
         return rs;
     }
@@ -75,6 +73,7 @@ public class BarcodeScannerWrapperImpl implements BarcodeScannerWrapper {
     @Override
     public void stopListener() {
         isRunning.set(false);
+        closeState(autoListenerState);
     }
 
     private void notifyError(SocketStatusListener statusListener, String message) {
@@ -88,7 +87,7 @@ public class BarcodeScannerWrapperImpl implements BarcodeScannerWrapper {
         State onlineState = State.create(null, 0);
         boolean isConnected;
         try {
-            onlineState.connect(config.ipAddress, config.port, config.timeoutInMillis);
+            onlineState.connect(config.getIpAddress(), config.getPort(), config.getTimeoutInMillis());
             isConnected = onlineState.isConnected();
         } catch (IOException var10) {
             throw new DisconnectError();
@@ -100,7 +99,8 @@ public class BarcodeScannerWrapperImpl implements BarcodeScannerWrapper {
 
     @Override
     public String scan() {
-        State manualState = getState();
+        closeStateIfAny(manualState);
+        manualState = getState();
         return startManualReceiveData(manualState);
     }
 
@@ -115,7 +115,7 @@ public class BarcodeScannerWrapperImpl implements BarcodeScannerWrapper {
     }
 
     private void onEndListener(State autoListenerState, SocketStatusListener statusListener) {
-        disconnectIfAny(autoListenerState);
+        closeStateIfAny(autoListenerState);
         notifyStatusChange(SocketClientStatus.End, statusListener);
     }
 
@@ -187,9 +187,9 @@ public class BarcodeScannerWrapperImpl implements BarcodeScannerWrapper {
         }
     }
 
-    public void disconnectIfAny(State autoListenerState) {
-        if (autoListenerState != null) {
-            closeState(autoListenerState);
+    public void closeStateIfAny(State state) {
+        if (state != null) {
+            closeState(state);
         }
     }
 }

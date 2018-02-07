@@ -1,8 +1,7 @@
-package cbsa.device.barcode.sdk.v2;
+package cbsa.device.barcode.sdk;
 
 
 import cbsa.device.barcode.exception.DisconnectError;
-import cbsa.device.barcode.sdk.SocketStatusListener;
 
 public interface BarcodeScannerWrapper {
     void startListener(SocketStatusListener listener);

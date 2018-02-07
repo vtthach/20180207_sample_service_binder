@@ -12,6 +12,8 @@ import java.net.SocketAddress;
 
 import timber.log.Timber;
 
+import static cbsa.device.Constant.LOG_TAG;
+
 public class State implements Closeable {
     private Socket socket;
     private byte[] sendBuffer;
@@ -85,7 +87,7 @@ public class State implements Closeable {
     }
 
     public void close() throws IOException {
-        this.disposeDataOutputStream();
+//        this.disposeDataOutputStream();
         this.disposeSocket();
     }
 
@@ -98,9 +100,9 @@ public class State implements Closeable {
         }
     }
 
-    void disposeSocket() throws IOException {
+    synchronized void disposeSocket() throws IOException {
         if (this.socket != null) {
-            Timber.i("disposeSocket");
+            Timber.i(LOG_TAG + "disposeSocket");
             try {
                 if (this.socket.isConnected()) {
                     this.socket.shutdownInput();
