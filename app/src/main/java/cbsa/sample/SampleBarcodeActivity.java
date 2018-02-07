@@ -4,8 +4,10 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 
 import java.text.DateFormat;
@@ -227,5 +229,29 @@ public class SampleBarcodeActivity extends AppCompatActivity implements ServiceB
         if (service != null) {
             service.stopListener();
         }
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent event) {
+        if (event.getAction() == MotionEvent.ACTION_DOWN && getCurrentFocus() != null) {
+            View v = getCurrentFocus();
+
+            // check keyboard is shown before dispatch touch event
+            boolean beforeDispatch = UIUtil.isKeyboardShown(v.getRootView());
+
+            boolean ret = super.dispatchTouchEvent(event);
+
+            if (v instanceof EditText) {
+                // check keyboard is shown after dispatch touch event
+                boolean isAfterDispatch = UIUtil.isKeyboardShown(v.getRootView());
+
+                if (event.getAction() == MotionEvent.ACTION_DOWN && isAfterDispatch &&
+                        beforeDispatch) {
+                    UIUtil.hideKeyboard(this, getWindow().getCurrentFocus());
+                }
+            }
+            return ret;
+        } else
+            return super.dispatchTouchEvent(event);
     }
 }
