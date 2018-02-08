@@ -87,11 +87,11 @@ public class State implements Closeable {
     }
 
     public void close() throws IOException {
-//        this.disposeDataOutputStream();
+        this.disposeDataOutputStream();
         this.disposeSocket();
     }
 
-    void disposeDataOutputStream() throws IOException {
+    private void disposeDataOutputStream() throws IOException {
         if (this.dataOutputStream != null) {
             Timber.i("disposeDataOutputStream");
             this.dataOutputStream.flush();
@@ -100,23 +100,22 @@ public class State implements Closeable {
         }
     }
 
-    synchronized void disposeSocket() throws IOException {
-        if (this.socket != null) {
+    private synchronized void disposeSocket() throws IOException {
+        if (socket != null) {
             Timber.i(LOG_TAG + "disposeSocket");
             try {
-                if (this.socket.isConnected()) {
-                    this.socket.shutdownInput();
+                if (!socket.isInputShutdown()) {
+                    socket.shutdownInput();
+                }
+                if (!socket.isOutputShutdown()) {
+                    socket.shutdownOutput();
                 }
             } catch (IOException var3) {
-                Timber.e(var3, "Error when shutdownInput");
+                Timber.d(var3, "Error when disposeSocket: " + var3.getMessage());
+            } finally {
+                socket.close();
+                socket = null;
             }
-            try {
-                this.socket.shutdownOutput();
-            } catch (IOException var2) {
-                Timber.e(var2, "Error when shutdownOutput");
-            }
-            this.socket.close();
-            this.socket = null;
         }
     }
 }
