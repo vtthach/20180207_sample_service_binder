@@ -2,7 +2,6 @@ package cbsa.sample;
 
 
 import android.app.Application;
-import android.util.Log;
 
 import timber.log.Timber;
 
